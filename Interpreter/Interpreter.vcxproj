@@ -130,6 +130,7 @@
     <ClCompile Include="main.c" />
     <ClCompile Include="stack.c" />
     <ClCompile Include="value.c" />
+    <ClCompile Include="variable.c" />
     <ClCompile Include="vm.c" />
     <ClCompile Include="vmInstructions.c" />
   </ItemGroup>

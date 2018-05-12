@@ -28,6 +28,8 @@ typedef HashTable Dictionary; // A dictionary is a hashtable
 /// <returns> A pointer to the created hash table </returns>
 HashTable* ht_create(int size);
 
+void ht_free(HashTable* hashTable);
+
 ///<summary>
 ///Hashes a string using a defined algorithm and caps the resulting value to the hash table size.
 ///<para>By default the funtion uses the Jenkins one-at-a-time hash algorithm</para>

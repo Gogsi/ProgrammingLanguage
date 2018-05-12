@@ -1,5 +1,7 @@
 #ifndef VM_H
 #define VM_H
+#include "stack.h"
+#include <stdbool.h>
 
 extern const unsigned char  VM_VERSION_MAJOR;
 extern const unsigned char  VM_VERSION_MINOR;
@@ -12,9 +14,12 @@ typedef struct {
 	unsigned char* fileContents;
 
 	///<summary>Decides the endianness in the file format(1 - little-endian, 0 - big-endian)</summary>
-	unsigned char isLittleEndian;
+	bool isLittleEndian;
 
 	unsigned long fileSize;
+
+	ValueStack* valueStack; //TODO: malloc these
+	CallStack* callStack;
 
 	///<summary>The current position in the VM content array</summary>
 	unsigned long fileIndex;
@@ -47,13 +52,40 @@ extern int vmNextInt32(VM * vm);
 ///	<param name="vm"> A pointer to the VM object </param>
 extern unsigned int vmNextUInt32(VM * vm);
 
+///<summary> Reads the next length bytes as an char array </summary>
+///	<param name="vm"> A pointer to the VM object </param>
+///	<param name="length"> The amount of bytes to read </param>
+extern char* vmNextString(VM * vm, unsigned char length);
+
 // The instructions are implemented in vmInstructions.c
 
-///<summary> This instruction defines a constant 
-///<para>Followed by 1 byte (value_type) and the sizeof(value_type) bytes for the value)</para>
+///<summary> Defines a constant 
+///<para>Followed by 1 byte (name_length), name_length bytes (variableName), 1 byte (value_type) and the sizeof(value_type) bytes for the value)</para>
 ///</summary>
 ///	<param name="vm"> A pointer to the VM object </param>
 extern void instructionConst(VM* vm);
 
+///<summary> Defines a variable 
+///<param>Followed by 1 byte (name_length) and name_length bytes (variableName)</para>
+///</summary>
+///	<param name="vm"> A pointer to the VM object </param>
+extern void instructionVar(VM* vm);
 
+///<summary> Stores the value at the top of the stack to a variable 
+///<para>Followed by 1 byte (name_length) and name_length bytes (variableName)</para>
+///</summary>
+///	<param name="vm"> A pointer to the VM object </param>
+extern void instructionStore(VM* vm);
+
+///<summary> Pushes the value of a variable to the stack
+///<para>Followed by 1 byte (name_length) and name_length bytes (variableName)</para>
+///</summary>
+///	<param name="vm"> A pointer to the VM object </param>
+extern void instructionLoad(VM* vm);
+
+///<summary> Pushes a value to the stack
+///<para>Followed by 1 byte (value_type) and the sizeof(value_type) bytes for the value)</para>
+///</summary>
+///	<param name="vm"> A pointer to the VM object </param>
+extern void instructionPush(VM* vm);
 #endif

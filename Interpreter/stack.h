@@ -11,6 +11,7 @@
 #include "value.h"
 #include "dictionary.h"
 #include <stdio.h>
+#include <stdbool.h>
 
 /*
 * VALUE STACK
@@ -27,15 +28,15 @@ typedef struct ValueStack {
 
 extern void valueStackInit(ValueStack* currentStack, int maxSize);
 
-extern int valueStackIsEmpty(ValueStack* currentStack);
-extern int valueStackIsFull(ValueStack* currentStack);
+extern bool valueStackIsEmpty(ValueStack* currentStack);
+extern bool valueStackIsFull(ValueStack* currentStack);
 
 extern void valueStackPush(ValueStack* currentStack, VALUE newValue);
 
-extern VALUE valueStackTop(ValueStack* currentStack);
+extern VALUE* valueStackTop(ValueStack* currentStack);
 
 extern void valueStackPop(ValueStack* currentStack);
-
+extern void valueStackFree(ValueStack* currentStack);
 /*
 * CALL STACK
 */
@@ -44,8 +45,12 @@ extern void valueStackPop(ValueStack* currentStack);
 ///Defines the stack frame, which keeps track of the variables in a subroutine
 ///</summary>
 typedef struct StackFrame {
+	char* frameName;
 	HashTable* variableDictionary;
 } StackFrame;
+
+extern void stackFrameInit(StackFrame* currentFrame, char* name, int dictionarySize);
+extern void stackFrameFree(StackFrame* currentFrame);
 
 ///<summary>
 ///Defines the call stack which is used for keeping track of subroutines and their variables
@@ -58,14 +63,17 @@ typedef struct CallStack {
 
 extern void callStackInit(CallStack* currentStack, int maxSize);
 
-extern int callStackIsEmpty(CallStack* currentStack);
-extern int callStackIsFull(CallStack* currentStack);
+extern bool callStackIsEmpty(CallStack* currentStack);
+extern bool callStackIsFull(CallStack* currentStack);
 
 extern void callStackPush(CallStack* currentStack, StackFrame newValue);
 
-extern StackFrame callStackTop(CallStack* currentStack);
+extern StackFrame* callStackTop(CallStack* currentStack);
 
 extern void callStackPop(CallStack* currentStack);
+extern void callStackFree(CallStack* currentStack);
+
+extern StackFrame* callStackGlobal(CallStack* currentStack);
 
 
 #endif

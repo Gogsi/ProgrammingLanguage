@@ -4,7 +4,9 @@
 typedef enum OPCODES{
 	CONST = 0x1A,
 	VAR = 0x2A,
-	STORE = 0x3A,
+	STORE = 0x3A, 
+	LOAD = 0x4A, 
+	PUSH = 0x5A, 
 
 	ADD = 0xA0,
 	SUB = 0xA1,

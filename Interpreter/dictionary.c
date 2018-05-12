@@ -26,6 +26,20 @@ HashTable* ht_create(int size){
 	return hashtable;
 }
 
+void ht_free(HashTable* hashTable)
+{
+	for (int i = 0; i < hashTable->size; i++) {
+		HTEntry* entry = hashTable->table[i];
+		while (entry != NULL) {
+			varFree(entry->v);
+			free(entry->key);
+			HTEntry* oldEntry = entry;
+			entry = entry->next;
+			free(oldEntry);
+		}
+	}
+}
+
 size_t ht_hash(char *key, size_t hashTableMax) {
 
 	size_t hashval = 0;
@@ -60,7 +74,7 @@ void ht_set(HashTable* hashtable, char* key, HTEntry* entry) {
 	size_t bucket = 0;
 	HTEntry* next = NULL;
 
-	bucket = ht_hash(hashtable, key);
+	bucket = ht_hash(key, hashtable->size);
 
 	next = hashtable->table[bucket];
 
@@ -70,13 +84,18 @@ void ht_set(HashTable* hashtable, char* key, HTEntry* entry) {
 
 	if (next != NULL && next->key != NULL && strcmp(key, next->key) == 0) {
 		// There's already an entry.
+		Variable* old = next->v;
 		next->v = entry->v;
+
+		if(old != entry->v)
+			free(old);
 	}
 	else {
 		// No entry found. Insert this entry as the first one in the bucket.
 		entry->next = hashtable->table[bucket];
 		hashtable->table[bucket] = entry;
 	}
+
 }
 
 Variable* ht_get(HashTable* hashtable, char* key) {
@@ -85,7 +104,7 @@ Variable* ht_get(HashTable* hashtable, char* key) {
 	size_t bucket = 0;
 	HTEntry* next = NULL;
 
-	bucket = ht_hash(hashtable, key);
+	bucket = ht_hash(key, hashtable->size);
 
 	next = hashtable->table[bucket];
 
@@ -107,7 +126,7 @@ void ht_remove(HashTable* hashtable, char* key) {
 	HTEntry* next = NULL;
 	HTEntry* last = NULL;
 
-	bucket = ht_hash(hashtable, key);
+	bucket = ht_hash(key, hashtable->size);
 
 	next = hashtable->table[bucket];
 

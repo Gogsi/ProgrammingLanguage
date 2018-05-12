@@ -8,7 +8,7 @@ FILE* openFile(char* fileName) {
 	fs = fopen(fileName, "rb");
 
 	if (fs == NULL) {
-		printf("ERROR: %s", strerror(errno));
+		ERROR_LOG("ERROR: %s", strerror(errno));
 		exit(1);
 	}
 
