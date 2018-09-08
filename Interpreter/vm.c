@@ -2,6 +2,7 @@
 #include "opcodes.h"
 #include "io.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 const unsigned char  VM_VERSION_MAJOR = 0x01;
@@ -12,6 +13,16 @@ const unsigned char* VM_HEADER_SIZE = 10;
 
 unsigned char VM_MAGIC_NUMBER[4] = { 0x4C, 0x41, 0x4E, 0x47 };
 
+
+void reverse_memcpy(char* dst, const char *src, size_t n)
+{
+	size_t i;
+
+	for (i = 0; i < n; ++i)
+		dst[n - 1 - i] = src[i];
+
+}
+
 /*	==BYTECODE FORMAT==
 *
 *	--HEADER FORMAT--
@@ -21,10 +32,11 @@ unsigned char VM_MAGIC_NUMBER[4] = { 0x4C, 0x41, 0x4E, 0x47 };
 *	VM_VERSION_MAJOR	 - (byte 4)		- 0x01
 *	VM_VERSION_MINOR	 - (byte 5)		- 0x01
 *	VM_IS_LITTLE_ENDIAN  - (byte 6)		- 0x01
-*	RESERVED_BYTES       - (bytes 7->9) - 01 01 01 01
+*	RESERVED_BYTES       - (bytes 7->9) - 01 01 01
 *
 *	(INSTRUCTIONS START AT (byte 10))
 */
+
 
 void vmReadHeader(VM * vm)
 {
@@ -65,7 +77,7 @@ void vmInit(VM* vm, unsigned char* fileContents, unsigned long fileSize) {
 	//vm = malloc( sizeof(vm) );
 
 	vm->callStack = malloc(sizeof(CallStack));
-	callStackInit(vm->callStack, 65536);
+	callStackInit(vm->callStack, 65535);
 
 	vm->valueStack = malloc(sizeof(ValueStack));
 	valueStackInit(vm->valueStack, 512);
@@ -88,17 +100,14 @@ void vmMain(VM* vm) {
 	StackFrame* global = malloc(sizeof(StackFrame));
 	stackFrameInit(global, "__global__", 65536);
 	callStackPush(vm->callStack, *global);
-
+	
 	while (vm->fileIndex < vm->fileSize) {  //MAIN LOOP
 
 		unsigned char instruction = vm->fileContents[vm->fileIndex++];
 		unsigned char tmp;
 		switch (instruction) {
-		case CONST:
-			instructionConst(vm);
-			break;
-		case VAR:
-			instructionVar(vm);
+		case STACKFRAME:
+			instructionStackFrame(vm);
 			break;
 		case STORE:
 			instructionStore(vm);
@@ -106,12 +115,42 @@ void vmMain(VM* vm) {
 		case LOAD:
 			instructionLoad(vm);
 			break;
-		case PUSH:
-			instructionPush(vm);
+		case I32PUSH:
+			instructionPush_Int(vm);
+			break;
+		case UI32PUSH:
+			instructionPush_UInt(vm);
 			break;
 
+		case I32ADD:
+			instructionAdd_Int(vm);
+			break;
+		case UI32ADD:
+			instructionAdd_UInt(vm);
+			break;
+
+		case I32SUB:
+			instructionSub_Int(vm);
+			break;
+		case UI32SUB:
+			instructionSub_UInt(vm);
+			break;
+
+		case I32MUL:
+			instructionMul_Int(vm);
+			break;
+		case UI32MUL:
+			instructionMul_UInt(vm);
+			break;
+
+		case I32DIV:
+			instructionDiv_Int(vm);
+			break;
+		case UI32DIV:
+			instructionDiv_UInt(vm);
+			break;
 		default:
-			ERROR_LOG("Unknown instruction");
+			ERROR_LOG("Unknown instruction %02X \n", instruction);
 		}
 
 	}
@@ -132,12 +171,26 @@ unsigned char vmNextByte(VM * vm)
 	return vm->fileContents[vm->fileIndex++];
 }
 
+unsigned short vmNextUShort(VM * vm)
+{
+	unsigned char c1 = vm->fileContents[vm->fileIndex++];
+	unsigned char c2 = vm->fileContents[vm->fileIndex++];
+
+	if (vm->isLittleEndian == 1) {
+		return c1 | c2 << 8;
+	}
+	else {
+		return c1 << 8 | c2;
+	}
+}
+
 int vmNextInt32(VM * vm)
 {
-	signed char c1 = vm->fileContents[vm->fileIndex++];
-	signed char c2 = vm->fileContents[vm->fileIndex++];
-	signed char c3 = vm->fileContents[vm->fileIndex++];
-	signed char c4 = vm->fileContents[vm->fileIndex++];
+	unsigned char c1 = vm->fileContents[vm->fileIndex++];
+	unsigned char c2 = vm->fileContents[vm->fileIndex++];
+	unsigned char c3 = vm->fileContents[vm->fileIndex++];
+	unsigned char c4 = vm->fileContents[vm->fileIndex++];
+
 	if (vm->isLittleEndian == 1) {
 		return c1 | c2 << 8 | c3 << 16 | c4 << 24;
 	}
@@ -160,7 +213,7 @@ unsigned int vmNextUInt32(VM * vm)
 	}
 }
 
-char * vmNextString(VM * vm, unsigned char length)
+char* vmNextString(VM* vm, unsigned char length)
 {
 	char* string = malloc(sizeof(char) * (length + 1)); // Allocate one extra byte for the null termination character \0
 	//strcpy(string, "aaa");

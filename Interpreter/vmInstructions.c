@@ -1,87 +1,29 @@
 #include "vm.h"
 #include "io.h"
 #include "value.h"
-#include "variable.h"
+#include <stdlib.h>
 
-void instructionConst(VM* vm) {
-	unsigned char nameLength = vmNextByte(vm);
-	char* variableName = vmNextString(vm, nameLength);
 
-	Variable* v = malloc(sizeof(Variable));
-	varInit(v);
-	v->key = variableName;
-	v->isConstant = true;
-
-	unsigned char variableType = vmNextByte(vm);
-
-	int i;
-	unsigned int ui;
-	switch (variableType) {
-	case INT32:
-		i = vmNextInt32(vm);
-		setValue_Int(v->value, i);
-		DEBUG_LOG("const int %s = %d\n", variableName, i);
-		break;
-	case UINT32:
-		ui = vmNextUInt32(vm);
-		setValue_UInt(v->value, ui);
-		DEBUG_LOG("const uint %s = %u\n", variableName, ui);
-		break;
-	}
-
-	HTEntry* entry = malloc(sizeof(HTEntry));
-	entry->key = variableName;
-	entry->next = NULL;
-	entry->v = v;
-
-	StackFrame* stackFrame = callStackTop(vm->callStack);
-	if (stackFrame == NULL) {
-		ERROR_LOG("Top stack frame is null");
-		return;
-	}
-
-	ht_set(stackFrame->variableDictionary, variableName, entry);
-
-}
-
-void instructionVar(VM* vm) {
-	unsigned char nameLength = vmNextByte(vm);
-	char* variableName = vmNextString(vm, nameLength);
-
-	Variable* v = malloc(sizeof(Variable));
-	varInit(v);
-	v->key = variableName;
-	v->isConstant = false;
-	
-	HTEntry* entry = malloc(sizeof(HTEntry));
-	entry->key = variableName;
-	entry->next = NULL;
-	entry->v = v;
-
-	StackFrame* stackFrame = callStackTop(vm->callStack);
-	if (stackFrame == NULL) {
-		ERROR_LOG("Top stack frame is null");
-		return;
-	}
-
-	ht_set(stackFrame->variableDictionary, variableName, entry);
-
-	DEBUG_LOG("var %s\n", variableName);
-
-	/*int a;
-	switch (type) {
-	case INT32:
-		a = vmNextUInt32(vm);
-		printf("var int:%d", a);
-		break;
-		//case
-	}*/
-}
-
-void instructionStore(VM * vm)
+void instructionStackFrame(VM * vm)
 {
 	unsigned char nameLength = vmNextByte(vm);
-	char* variableName = vmNextString(vm, nameLength);
+	char* frameName = vmNextString(vm, nameLength);
+
+	unsigned short varArraySize = vmNextUShort(vm);
+
+	StackFrame* frame = malloc(sizeof(StackFrame));
+	stackFrameInit(frame, frameName, varArraySize);
+	callStackPush(vm->callStack, *frame);
+
+	DEBUG_LOG("==StackFrame %s(%d local vars)==\n", frameName, varArraySize);
+
+}
+
+
+//Stack operations
+void instructionStore(VM * vm)
+{
+	unsigned short varId = vmNextUShort(vm);
 
 	StackFrame* stackFrame = callStackTop(vm->callStack);
 	if (stackFrame == NULL) {
@@ -89,49 +31,30 @@ void instructionStore(VM * vm)
 		return;
 	}
 
-
-	Variable* v = ht_get(stackFrame->variableDictionary, variableName);
-	if (v->isConstant == true) {
-		ERROR_LOG("Atempted to change value of constant\n");
+	if (varId >= stackFrame->varArraySize) {
+		ERROR_LOG("Attempted to access local variable that does not exist\n");
 		return;
 	}
+
+	VALUE* v = &stackFrame->varArray[varId];
 
 	if (valueStackIsEmpty(vm->valueStack) == true) {
 		ERROR_LOG("Value stack is empty\n");
 		return;
 	}
-	VALUE* newValue = malloc(sizeof(VALUE));
-	memcpy(newValue, valueStackTop(vm->valueStack), sizeof(VALUE)); // Create a new copy of the value since we are going to pop it from the stack and it will get replaced after the next push.
 
-	varSetValue(v, newValue);
+	// Create a new copy of the value since we are going to pop it from the stack and it will get replaced after the next push.
+	memcpy(v, valueStackTop(vm->valueStack), sizeof(VALUE)); 
+
 	valueStackPop(vm->valueStack);
 
-	//TODO: sortof cheating since we get a pointer to the entry and change the data without using ht_set
-
-	/*
-	HTEntry* entry = malloc(sizeof(HTEntry));
-	entry->key = variableName;
-	entry->next = NULL;
-	entry->v = v;
-
-	ht_set(stackFrame->variableDictionary, variableName, entry);
-	*/
-
-	switch (v->value->valueType) {
-	case INT32:
-		DEBUG_LOG("%s = (int) %d\n", variableName, v->value->valueContainer.i);
-		break;
-	case UINT32:
-		DEBUG_LOG("%s = (uint) %u\n", variableName, v->value->valueContainer.ui);
-		break;
-
-	}
+	DEBUG_LOG("var %d = %d\n", varId, v->i);
 }
 
 void instructionLoad(VM * vm)
 {
-	unsigned char nameLength = vmNextByte(vm);
-	char* variableName = vmNextString(vm, nameLength);
+	unsigned short varId = vmNextUShort(vm);
+
 
 	StackFrame* stackFrame = callStackTop(vm->callStack);
 	if (stackFrame == NULL) {
@@ -140,34 +63,186 @@ void instructionLoad(VM * vm)
 	}
 
 
-	Variable* v = ht_get(stackFrame->variableDictionary, variableName);
+	VALUE* v = &stackFrame->varArray[varId];
 
-	valueStackPush(vm->valueStack, *v->value);
+	valueStackPush(vm->valueStack, *v);
 
-	DEBUG_LOG("stackPush %s (%d)\n", variableName, v->value->valueContainer.i);
 }
 
-void instructionPush(VM * vm)
+void instructionPush_Int(VM * vm)
 {
-	unsigned char variableType = vmNextByte(vm);
-
 	VALUE v;
-	v.valueType = variableType;
 	int i;
+
+	i = vmNextInt32(vm);
+	v.i = i;
+		
+	valueStackPush(vm->valueStack, v);
+}
+
+void instructionPush_UInt(VM * vm)
+{
+	VALUE v;
 	unsigned int ui;
 
-	switch (variableType) {
-	case INT32:
-		i = vmNextInt32(vm);
-		v.valueContainer.i = i;
-		DEBUG_LOG("stackPush (int) %d\n", i);
-		break;
-	case UINT32:
-		ui = vmNextUInt32(vm);
-		v.valueContainer.ui = ui;
-		DEBUG_LOG("stackPush (uint) %u\n", ui);
-		break;
-	}
+	ui = vmNextInt32(vm);
+	v.ui = ui;
 
 	valueStackPush(vm->valueStack, v);
+}
+
+
+// Arithmetic operations
+void instructionAdd_Int(VM * vm)
+{
+	if (valueStackLength(vm->valueStack) < 2) {
+		ERROR_LOG("Value stack doesn't have 2 elements\n");
+		return;
+	}
+
+	VALUE* v1 = valueStackTop(vm->valueStack);
+	valueStackPop(vm->valueStack);
+
+	VALUE* v2 = valueStackTop(vm->valueStack);
+
+	v2->i = v2->i + v1->i;
+}
+
+void instructionAdd_UInt(VM * vm)
+{
+	if (valueStackLength(vm->valueStack) < 2) {
+		ERROR_LOG("Value stack doesn't have 2 elements\n");
+		return;
+	}
+
+	VALUE* v1 = valueStackTop(vm->valueStack);
+	valueStackPop(vm->valueStack);
+
+	VALUE* v2 = valueStackTop(vm->valueStack);
+
+	v2->ui = v2->ui + v1->ui;
+}
+
+
+void instructionSub_Int(VM * vm)
+{
+	if (valueStackLength(vm->valueStack) < 2) {
+		ERROR_LOG("Value stack doesn't have 2 elements\n");
+		return;
+	}
+
+	VALUE* v1 = valueStackTop(vm->valueStack);
+	valueStackPop(vm->valueStack);
+
+	VALUE* v2 = valueStackTop(vm->valueStack);
+
+	v2->i = v2->i - v1->i; //Subtract the top value from the second-top (v2-v1)
+}
+
+void instructionSub_UInt(VM * vm)
+{
+	if (valueStackLength(vm->valueStack) < 2) {
+		ERROR_LOG("Value stack doesn't have 2 elements\n");
+		return;
+	}
+
+	VALUE* v1 = valueStackTop(vm->valueStack);
+	valueStackPop(vm->valueStack);
+
+	VALUE* v2 = valueStackTop(vm->valueStack);
+
+	v2->ui = v2->ui - v1->ui;
+}
+
+
+void instructionMul_Int(VM * vm)
+{
+	if (valueStackLength(vm->valueStack) < 2) {
+		ERROR_LOG("Value stack doesn't have 2 elements\n");
+		return;
+	}
+
+	VALUE* v1 = valueStackTop(vm->valueStack);
+	valueStackPop(vm->valueStack);
+
+	VALUE* v2 = valueStackTop(vm->valueStack);
+
+	v2->i = v2->i * v1->i; 
+}
+
+void instructionMul_UInt(VM * vm)
+{
+	if (valueStackLength(vm->valueStack) < 2) {
+		ERROR_LOG("Value stack doesn't have 2 elements\n");
+		return;
+	}
+
+	VALUE* v1 = valueStackTop(vm->valueStack);
+	valueStackPop(vm->valueStack);
+
+	VALUE* v2 = valueStackTop(vm->valueStack);
+
+	v2->ui = v2->ui * v1->ui;
+}
+
+
+void instructionDiv_Int(VM * vm)
+{
+	if (valueStackLength(vm->valueStack) < 2) {
+		ERROR_LOG("Value stack doesn't have 2 elements\n");
+		return;
+	}
+
+	VALUE* v1 = valueStackTop(vm->valueStack);
+	valueStackPop(vm->valueStack);
+
+	VALUE* v2 = valueStackTop(vm->valueStack);
+
+	v2->i = v2->i / v1->i;
+}
+
+void instructionDiv_UInt(VM * vm)
+{
+	if (valueStackLength(vm->valueStack) < 2) {
+		ERROR_LOG("Value stack doesn't have 2 elements\n");
+		return;
+	}
+
+	VALUE* v1 = valueStackTop(vm->valueStack);
+	valueStackPop(vm->valueStack);
+
+	VALUE* v2 = valueStackTop(vm->valueStack);
+
+	v2->ui = v2->ui / v1->ui;
+}
+
+
+void instructionMod_Int(VM * vm)
+{
+	if (valueStackLength(vm->valueStack) < 2) {
+		ERROR_LOG("Value stack doesn't have 2 elements\n");
+		return;
+	}
+
+	VALUE* v1 = valueStackTop(vm->valueStack);
+	valueStackPop(vm->valueStack);
+
+	VALUE* v2 = valueStackTop(vm->valueStack);
+
+	v2->i = v2->i % v1->i;
+}
+
+void instructionMod_UInt(VM * vm)
+{
+	if (valueStackLength(vm->valueStack) < 2) {
+		ERROR_LOG("Value stack doesn't have 2 elements\n");
+		return;
+	}
+
+	VALUE* v1 = valueStackTop(vm->valueStack);
+	valueStackPop(vm->valueStack);
+
+	VALUE* v2 = valueStackTop(vm->valueStack);
+
+	v2->ui = v2->ui % v1->ui;
 }

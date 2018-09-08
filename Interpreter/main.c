@@ -1,13 +1,15 @@
 #include "opcodes.h"
-#include "variable.h"
+#include "value.h"
 #include "stack.h"
 #include "io.h"
 #include "vm.h"
-#include "dictionary.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 void main(void) {
-	FILE* file = openFile("D:\\file.bin");
+	DEBUG_LOG("Variable size: %d\n", sizeof(VALUE));
+
+	FILE* file = openFile("file.bin");
 
 	int fileLength = 0;
 	unsigned char* arr = readAllBytes(file, &fileLength);
@@ -19,12 +21,7 @@ void main(void) {
 	vmInit(vm, arr, fileLength);
 	vmMain(vm);
 
-	/*
-	for (int i = 0; i < fileLength; i++) {
-		printf("%02X ", arr[i]);
-	}
-	*/
-	getchar();
+	getchar(); // Wait for keyboard input and exit
 
 	free(arr);
 	vmFree(vm);

@@ -18,13 +18,7 @@
     <ClInclude Include="opcodes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="variable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="stack.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="value.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vm.h">
@@ -33,7 +27,7 @@
     <ClInclude Include="io.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="dictionary.h">
+    <ClInclude Include="value.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -56,11 +50,10 @@
     <ClCompile Include="vmInstructions.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dictionary.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="variable.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="file.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

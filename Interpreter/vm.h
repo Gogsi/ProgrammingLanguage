@@ -18,7 +18,7 @@ typedef struct {
 
 	unsigned long fileSize;
 
-	ValueStack* valueStack; //TODO: malloc these
+	ValueStack* valueStack;
 	CallStack* callStack;
 
 	///<summary>The current position in the VM content array</summary>
@@ -44,6 +44,10 @@ extern void vmFree(VM* vm);
 ///	<param name="vm"> A pointer to the VM object </param>
 extern unsigned char vmNextByte(VM* vm);
 
+///<summary> Reads the next 2 bytes as an unsigned short </summary>
+///	<param name="vm"> A pointer to the VM object </param>
+extern unsigned short vmNextUShort(VM* vm);
+
 ///<summary> Reads the next 4 bytes as an int </summary>
 ///	<param name="vm"> A pointer to the VM object </param>
 extern int vmNextInt32(VM * vm);
@@ -59,33 +63,83 @@ extern char* vmNextString(VM * vm, unsigned char length);
 
 // The instructions are implemented in vmInstructions.c
 
-///<summary> Defines a constant 
-///<para>Followed by 1 byte (name_length), name_length bytes (variableName), 1 byte (value_type) and the sizeof(value_type) bytes for the value)</para>
+///<summary> Adds a new StackFrame to the call stack
+///<para>Followed by 2 bytes (varArraySize)</para>
 ///</summary>
 ///	<param name="vm"> A pointer to the VM object </param>
-extern void instructionConst(VM* vm);
-
-///<summary> Defines a variable 
-///<param>Followed by 1 byte (name_length) and name_length bytes (variableName)</para>
-///</summary>
-///	<param name="vm"> A pointer to the VM object </param>
-extern void instructionVar(VM* vm);
+extern void instructionStackFrame(VM* vm);
 
 ///<summary> Stores the value at the top of the stack to a variable 
-///<para>Followed by 1 byte (name_length) and name_length bytes (variableName)</para>
+///<para>Followed by 2 bytes (varId)</para>
 ///</summary>
 ///	<param name="vm"> A pointer to the VM object </param>
 extern void instructionStore(VM* vm);
 
 ///<summary> Pushes the value of a variable to the stack
-///<para>Followed by 1 byte (name_length) and name_length bytes (variableName)</para>
+///<para>Followed by 2 bytes (varId)</para>
 ///</summary>
 ///	<param name="vm"> A pointer to the VM object </param>
 extern void instructionLoad(VM* vm);
 
-///<summary> Pushes a value to the stack
-///<para>Followed by 1 byte (value_type) and the sizeof(value_type) bytes for the value)</para>
+///<summary> Pushes a INT32 value to the stack
+///<para>Followed by 4 bytes for the value</para>
 ///</summary>
 ///	<param name="vm"> A pointer to the VM object </param>
-extern void instructionPush(VM* vm);
+extern void instructionPush_Int(VM* vm);
+
+///<summary> Pushes a UINT32 value to the stack
+///<para>Followed by 4 bytes for the value</para>
+///</summary>
+///	<param name="vm"> A pointer to the VM object </param>
+extern void instructionPush_UInt(VM* vm);
+
+///<summary> Pops the top two values of the stack and adds them as INT32
+///</summary>
+///	<param name="vm"> A pointer to the VM object </param>
+extern void instructionAdd_Int(VM* vm);
+
+///<summary> Pops the top two values of the stack and adds them as UINT32
+///</summary>
+///	<param name="vm"> A pointer to the VM object </param>
+extern void instructionAdd_UInt(VM* vm);
+
+///<summary> Pops the top two values of the stack and subtracts them as INT32
+///</summary>
+///	<param name="vm"> A pointer to the VM object </param>
+extern void instructionSub_Int(VM* vm);
+
+///<summary> Pops the top two values of the stack and subtracts them as UINT32
+///</summary>
+///	<param name="vm"> A pointer to the VM object </param>
+extern void instructionSub_UInt(VM* vm);
+
+///<summary> Pops the top two values of the stack and multiplies them as INT32
+///</summary>
+///	<param name="vm"> A pointer to the VM object </param>
+extern void instructionMul_Int(VM* vm);
+
+///<summary> Pops the top two values of the stack and multiplies them as UINT32
+///</summary>
+///	<param name="vm"> A pointer to the VM object </param>
+extern void instructionMul_UInt(VM* vm);
+
+///<summary> Pops the top two values of the stack and divides them as INT32
+///</summary>
+///	<param name="vm"> A pointer to the VM object </param>
+extern void instructionDiv_Int(VM* vm);
+
+///<summary> Pops the top two values of the stack and divides them as UINT32
+///</summary>
+///	<param name="vm"> A pointer to the VM object </param>
+extern void instructionDiv_UInt(VM* vm);
+
+///<summary> Pops the top two values of the stack and calculates the remainder after division as INT32
+///</summary>
+///	<param name="vm"> A pointer to the VM object </param>
+extern void instructionMod_Int(VM* vm);
+
+///<summary> Pops the top two values of the stack and divides them as UINT32
+///</summary>
+///	<param name="vm"> A pointer to the VM object </param>
+extern void instructionMod_UInt(VM* vm);
 #endif

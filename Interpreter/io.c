@@ -1,10 +1,16 @@
 #include "io.h"
 #include "vm.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
+#include <string.h>
+
+#ifdef _WIN32 
+#define _CRT_SECURE_NO_DEPRECATE 
+#endif 
 
 FILE* openFile(char* fileName) {
-	FILE* fs = malloc(sizeof(fs));
+	FILE* fs = malloc(sizeof(*fs));
 	fs = fopen(fileName, "rb");
 
 	if (fs == NULL) {
@@ -20,22 +26,15 @@ void closeFile(FILE * file)
 	fclose(file);
 }
 
-/*int bytesToInt(char * buf)
-{
-	if (VM_IS_LITTLE_ENDIAN) {
-		return (buf[0]) | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24);
-	}
-	return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | (buf[3]);
-}*/
 
-unsigned char* readAllBytes(FILE* file, int* fileLength) {
+unsigned char* readAllBytes(FILE* file, int *fileLength) {
 	fseek(file, 0, SEEK_END);
 	*fileLength = ftell(file);
 	rewind(file);
 
-	unsigned char* byteArray = malloc(sizeof(byteArray) * (*fileLength));
-
-	fread(byteArray,  1, *fileLength, file);
+	unsigned char* byteArray = NULL;
+	byteArray = (unsigned char*)malloc(sizeof(*byteArray) * (*fileLength + 1));
+	fread(byteArray, *fileLength, 1, file);
 
 	return byteArray;
 }

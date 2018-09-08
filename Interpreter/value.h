@@ -18,7 +18,7 @@ typedef enum  VALUE_TYPE {
 	STRING = 0x8 //TODO: Maybe string shouldn't be a value type?
 } VALUE_TYPE;
 
-///<summary>The value container union which will take 8 bytes for every variable type.</summary>
+///<summary>The value container which will take 8 bytes for every variable type.</summary>
 typedef union VALUE_CONTAINER {
 	int i; // Integer
 	unsigned int ui; //Unsigned integer
@@ -33,17 +33,9 @@ typedef union VALUE_CONTAINER {
 	double d; //Float
 
 	char* s;//String
-} VALUE_CONTAINER;
-
-///<summary> The value structure holds a value and its type</summary>
-typedef struct {
-	VALUE_TYPE valueType;
-	VALUE_CONTAINER valueContainer;
 } VALUE;
 
-//extern VALUE createValue();
 
-extern void setValue(VALUE* v, VALUE_CONTAINER value, VALUE_TYPE type);
 
 extern void setValue_Int(VALUE* v, int value);
 extern void setValue_UInt(VALUE* v, unsigned int value);

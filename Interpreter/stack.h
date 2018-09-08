@@ -1,6 +1,6 @@
 /*
 	STACK.H - defines two structures
-	1) ValueStack - used for interpreting instructions
+	1) ValueStack (aka Operand stack)- used for interpreting instructions
 	2) CallStack - used for keeping track of subroutines and their variables
 	Both stacks should only have ONE instance per interpreter.
 */
@@ -9,7 +9,6 @@
 #define STACK_H
 
 #include "value.h"
-#include "dictionary.h"
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -30,9 +29,9 @@ extern void valueStackInit(ValueStack* currentStack, int maxSize);
 
 extern bool valueStackIsEmpty(ValueStack* currentStack);
 extern bool valueStackIsFull(ValueStack* currentStack);
+extern int valueStackLength(ValueStack* currentStack);
 
 extern void valueStackPush(ValueStack* currentStack, VALUE newValue);
-
 extern VALUE* valueStackTop(ValueStack* currentStack);
 
 extern void valueStackPop(ValueStack* currentStack);
@@ -46,10 +45,12 @@ extern void valueStackFree(ValueStack* currentStack);
 ///</summary>
 typedef struct StackFrame {
 	char* frameName;
-	HashTable* variableDictionary;
+
+	unsigned short varArraySize;
+	VALUE* varArray;
 } StackFrame;
 
-extern void stackFrameInit(StackFrame* currentFrame, char* name, int dictionarySize);
+extern void stackFrameInit(StackFrame* currentFrame, char* name, unsigned short varArraySize);
 extern void stackFrameFree(StackFrame* currentFrame);
 
 ///<summary>
@@ -65,6 +66,7 @@ extern void callStackInit(CallStack* currentStack, int maxSize);
 
 extern bool callStackIsEmpty(CallStack* currentStack);
 extern bool callStackIsFull(CallStack* currentStack);
+extern int callStackLength(CallStack* currentStack);
 
 extern void callStackPush(CallStack* currentStack, StackFrame newValue);
 

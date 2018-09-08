@@ -27,6 +27,11 @@ bool valueStackIsFull(ValueStack * currentStack)
 	return currentStack->top == currentStack->maxSize -1;
 }
 
+int valueStackLength(ValueStack * currentStack)
+{
+	return currentStack->top + 1;
+}
+
 void valueStackPush(ValueStack* currentStack, VALUE newValue)
 {
 	if (valueStackIsFull(currentStack)) { 
@@ -59,7 +64,7 @@ void valueStackPop(ValueStack* currentStack)
 
 }
 
-void valueStackFree(ValueStack * currentStack)
+void valueStackFree(ValueStack* currentStack)
 {
 	free(currentStack->values);
 }
@@ -68,17 +73,21 @@ void valueStackFree(ValueStack * currentStack)
 STACK FRAME
 */
 
-void stackFrameInit(StackFrame * currentFrame, char * name, int dictionarySize)
+void stackFrameInit(StackFrame* currentFrame, char* name, unsigned short varArraySize)
 {
 	currentFrame->frameName = name;
-	currentFrame->variableDictionary = ht_create(dictionarySize);
+	currentFrame->varArraySize = varArraySize;
+	currentFrame->varArray = malloc(sizeof(VALUE) * varArraySize);
+
+	for (int i = 0; i < varArraySize; i++) {
+		currentFrame->varArray[i].i = 0;
+	}
 }
 
 void stackFrameFree(StackFrame * currentFrame)
 {
 	free(currentFrame->frameName);
-	ht_free(currentFrame->variableDictionary);
-	free(currentFrame->variableDictionary);
+	free(currentFrame->varArray);
 }
 
 /*
@@ -87,13 +96,13 @@ CALL STACK
 
 void callStackInit(CallStack* currentStack, int maxSize)
 {
-	StackFrame* valueArray = malloc(sizeof(StackFrame) * maxSize);
+	StackFrame* frames = malloc(sizeof(StackFrame) * maxSize);
 
 	//currentStack = malloc(sizeof(currentStack));
 
 	currentStack->maxSize = maxSize;
 	currentStack->top = -1;
-	currentStack->stackFrames = valueArray;
+	currentStack->stackFrames = frames;
 }
 
 bool callStackIsEmpty(CallStack * currentStack)
@@ -104,6 +113,11 @@ bool callStackIsEmpty(CallStack * currentStack)
 bool callStackIsFull(CallStack * currentStack)
 {
 	return currentStack->top == currentStack->maxSize - 1;
+}
+
+int callStackLength(CallStack * currentStack)
+{
+	return currentStack->top + 1;
 }
 
 void callStackPush(CallStack* currentStack, StackFrame newValue)
